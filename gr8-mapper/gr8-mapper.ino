@@ -11,6 +11,9 @@ const float outputMax = 5.0;
 const int controlPinsPulse[] = {2, 3, 4, 5, 6}; // Adjust based on actual pin numbers
 const int controlPinsAnalog[] = {9, 10, 11, 12, 13}; // Adjust based on actual pin numbers
 
+const float dutyMin = 4.98;
+const float dutyMax = 10.06;
+
 void setup() {
     Serial.begin(9600); // Start Serial Communication
     Serial.println("Setting up...");
@@ -43,8 +46,12 @@ float pinsOnReadingPulse() {
 
     Serial.print("✅ Duty Cycle: ");
     Serial.print(dutyCycle);
+    
+    float percentage = (dutyCycle - dutyMin) * (100.0 / (dutyMax - dutyMin));
 
-    return (dutyCycle * 5) / 100; // Determine how many pins to turn on
+    Serial.print(" ✅ Percentage: ");
+    Serial.print(percentage);
+    return (percentage * 5) / 100; 
 }
 
 float pinsOnReadingAnalog() {
@@ -64,7 +71,7 @@ void loop() {
     float pinsOnAnalog = pinsOnReadingAnalog();
 
     for (int i = 0; i < 5; i++) {
-        if (i >= pinsOnPulse) {
+        if (i < pinsOnPulse) {
             digitalWrite(controlPinsPulse[i], HIGH); // Turn on pin
         } else {
             digitalWrite(controlPinsPulse[i], LOW); // Turn off pin
@@ -72,7 +79,7 @@ void loop() {
     }
     
     for (int i = 0; i < 5; i++) {
-        if (i >= pinsOnAnalog) {
+        if (i < pinsOnAnalog) {
             digitalWrite(controlPinsAnalog[i], HIGH); // Turn on pin
         } else {
             digitalWrite(controlPinsAnalog[i], LOW); // Turn off pin
@@ -80,5 +87,5 @@ void loop() {
     }
 
 
-    delay(00);
+    delay(500);
 }
