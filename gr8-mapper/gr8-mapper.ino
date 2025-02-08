@@ -1,4 +1,5 @@
 const int pwmInputPin = 8;
+const int pwmDcMotorPin = 11;
 
 // Define the input voltage range
 const float inputMin = 0.24; // Minimum expected voltage
@@ -9,7 +10,6 @@ const float outputMin = 0.0;
 const float outputMax = 5.0;
 
 const int controlPinsPulse[] = {2, 3, 4, 5, 6}; // Adjust based on actual pin numbers
-const int controlPinsAnalog[] = {9, 10, 11, 12, 13}; // Adjust based on actual pin numbers
 
 const float dutyMin = 4.98;
 const float dutyMax = 10.06;
@@ -21,15 +21,12 @@ void setup() {
         pinMode(controlPinsPulse[i], OUTPUT);
         digitalWrite(controlPinsPulse[i], LOW); // Start with all off
     }
-    for (int i = 0; i < 5; i++) {
-        pinMode(controlPinsAnalog[i], OUTPUT);
-        digitalWrite(controlPinsAnalog[i], LOW); // Start with all off
-    }
     pinMode(pwmInputPin, INPUT);
+    pinMode(pwmDcMotorPin, OUTPUT);
     Serial.println("Setup complete!");
 }
 
-float pinsOnReadingPulse() {
+float percentageReadingPulse() {
 
     // Measure HIGH duration
     unsigned long highTime = pulseIn(pwmInputPin, HIGH, 50000UL);
@@ -49,26 +46,25 @@ float pinsOnReadingPulse() {
     
     float percentage = (dutyCycle - dutyMin) * (100.0 / (dutyMax - dutyMin));
 
-    Serial.print(" ✅ Percentage: ");
+    Serial.print(" ✅ Pulse percentage: ");
     Serial.print(percentage);
-    return (percentage * 5) / 100; 
+    return percentage;
 }
 
-float pinsOnReadingAnalog() {
+float logAnalogPercentage() {
     int rawValue = analogRead(pwmInputPin);
     float voltage = rawValue * (5.0 / 1023.0);
     Serial.print("%, Voltage: ");
     Serial.print(voltage);
     Serial.println("V");
-    float percentage = (voltage - inputMin) / (inputMax - inputMin) * 100.0;
-    return (percentage * 5) / 100; 
 }
 
 void loop() {
     Serial.println("Looping...");
 
-    float pinsOnPulse = pinsOnReadingPulse();
-    float pinsOnAnalog = pinsOnReadingAnalog();
+    float percentagePulse = percentageReadingPulse();
+    float pinsOnPulse = (percentagePulse * 5) / 100;
+    logAnalogPercentage();
 
     for (int i = 0; i < 5; i++) {
         if (i < pinsOnPulse) {
@@ -77,15 +73,16 @@ void loop() {
             digitalWrite(controlPinsPulse[i], LOW); // Turn off pin
         }
     }
-    
-    for (int i = 0; i < 5; i++) {
-        if (i < pinsOnAnalog) {
-            digitalWrite(controlPinsAnalog[i], HIGH); // Turn on pin
-        } else {
-            digitalWrite(controlPinsAnalog[i], LOW); // Turn off pin
-        }
+
+    float motorSpeed = percentagePulse * 255.0 / 100.0;
+    Serial.print("Motor speed: ");
+    Serial.print(motorSpeed);
+    if (motorSpeed < 150) {
+      Serial.print(" but clapped to 0!");
+      motorSpeed = 0;
     }
+    Serial.println();
+    analogWrite(pwmDcMotorPin, motorSpeed);
 
-
-    delay(500);
+    delay(1000);
 }
